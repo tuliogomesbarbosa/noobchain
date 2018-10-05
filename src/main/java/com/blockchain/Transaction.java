@@ -42,6 +42,25 @@ public class Transaction {
         return StringUtil.verifyECDSASig(sender, data, signature);
     }
 
+    public boolean processTransaction() {
+        if(!verifySignature()) {
+            System.out.println("#Transaction Signature failed to verify");
+            return false;
+        }
+
+        //gather transaction inputs (make sure they are unspent)
+        for (TransactionInput transactionInput : inputs) {
+            transactionInput.UTXO = NoobChain.UTXOs.get(transactionInput.transactionOutputId);
+        }
+
+
+        return false;
+    }
+
+    public float getInputsValues() {
+        return 0f;
+    }
+
     public static class TransactionInput {
         public String transactionOutputId; //Reference to TransactionOutputs -> transactionId
         public TransactionOutput UTXO; //Contains the Unspent transaction output
