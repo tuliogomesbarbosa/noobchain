@@ -49,16 +49,45 @@ public class Transaction {
         }
 
         //gather transaction inputs (make sure they are unspent)
-        for (TransactionInput transactionInput : inputs) {
-            transactionInput.UTXO = NoobChain.UTXOs.get(transactionInput.transactionOutputId);
+        inputs.forEach(t -> t.UTXO = NoobChain.UTXOs.get(t.transactionOutputId));
+
+        float unspentTxOutputSum = getInputsValues();
+
+        if (unspentTxOutputSum < NoobChain.minimumTransaction) {
+            System.out.println("#Transaction inputs too small: " + unspentTxOutputSum);
+            return false;
         }
 
+        //generate transactions outputs
+        float leftOver = unspentTxOutputSum - value;
+        this.transactionId = calculateHash();
+        outputs.add(new TransactionOutput(this.recipient, value, this.transactionId));
+        outputs.add(new TransactionOutput(this.sender, leftOver, this.transactionId));
 
-        return false;
+        //add outputs to unspent list
+        outputs.forEach(o -> NoobChain.UTXOs.put(o.id, o));
+
+        //remove transaction inputs from UTXO list as spent
+        inputs.stream()
+                .filter(i -> i.UTXO != null)
+                .forEach(i -> NoobChain.UTXOs.remove(i.UTXO.id));
+
+        return true;
     }
 
     public float getInputsValues() {
-        return 0f;
+        return (float) inputs.stream()
+                .filter(i -> i.UTXO != null)
+                .mapToDouble(i -> i.UTXO.value)
+                .sum();
+    }
+
+    public float getOutputsValue() {
+        float total = 0;
+        for (TransactionOutput output : outputs) {
+            total += output.value;
+        }
+        return total;
     }
 
     public static class TransactionInput {

@@ -2,7 +2,9 @@ package com.blockchain;
 
 import java.io.UnsupportedEncodingException;
 import java.security.*;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 public class StringUtil {
     public static String applySha256(String input) {
@@ -56,5 +58,25 @@ public class StringUtil {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static String getMerkleRoot(List<Transaction> transactions) {
+        int count = transactions.size();
+        ArrayList<String> previousTreeLayer = new ArrayList<>();
+
+        for (Transaction transaction : transactions) {
+            previousTreeLayer.add(transaction.transactionId);
+        }
+
+        ArrayList<String> treeLayer = previousTreeLayer;
+        while (count > 1) {
+            treeLayer = new ArrayList<>();
+            for (int i = 1; i < previousTreeLayer.size(); i++) {
+                treeLayer.add(applySha256(previousTreeLayer.get(i - 1) + previousTreeLayer.get(i)));
+            }
+            count = treeLayer.size();
+            previousTreeLayer = treeLayer;
+        }
+        return (treeLayer.size() == 1) ? treeLayer.get(0) : "";
     }
 }
